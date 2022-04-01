@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>webgl_loader_gltf</title>
+  </head>
+  <body>
+    <script type="module">
+      import * as THREE from "../build/three.module.js";
+      import { OrbitControls } from "../jsm/controls/OrbitControls.js";
+      import { GLTFLoader } from "../jsm/loaders/GLTFLoader.js";
+      import { RGBELoader } from "../jsm/loaders/RGBELoader.js";
+      import { RoughnessMipmapper } from "../jsm/utils/RoughnessMipmapper.js";
+
+      let scene, camera, renderer;
+
+      init();
+      function init() {
+        // 创建容器
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+        // 创建 场景
+        scene = new THREE.Scene();
+        // 创建 透视相机
+        camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.25,
+          100
+        );
+        // 相机初始位置
+        // camera.position.set(-1.8, 0.6, 2.7);
+
+        // HDR照明应用于场景中的所有对象
+        new RGBELoader()
+          .setDataType(THREE.UnsignedByteType)
+          .setPath("textures/equirectangular/")
+          .load("royal_esplanade_1k.hdr", function (texture) {
+            const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+            // 背景
+            scene.background = envMap;
+            // 环境
+            scene.environment = envMap;
+
+            // 废弃回收对象
+            texture.dispose();
+            pmremGenerator.dispose();
+
+            // 模型
+
+            // use of RoughnessMipmapper is optional
+            const roughnessMipmapper = new RoughnessMipmapper(renderer);
+            const loader = new GLTFLoader().setPath(
+              "models/gltf/DamagedHelmet/glTF/"
+            );
+            loader.load("DamagedHelmet.gltf", function (gltf) {
+              gltf.scene.traverse(function (child) {
+                if (child.isMesh) {
+                  roughnessMipmapper.generateMipmaps(child.material);
+                }
+              });
+
+              scene.add(gltf.scene);
+
+              roughnessMipmapper.dispose();
+
+              render();
+            });
+          });
+
+        //  渲染
+        renderer = new THREE.WebGLRenderer({ antialias: true }); //   防锯齿
+        // 设置设备像素比。通常用于避免HiDPI设备上绘图模糊
+        renderer.setPixelRatio(window.devicePixelRatio);
+        // 将输出canvas的大小调整为(width, height)并考虑设备像素比
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        // 色调映射
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1;
+        // 定义渲染器的输出编码
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        // dom加载 render
+        container.appendChild(renderer.domElement);
+
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
+
+        // 控制器
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.addEventListener("change", render);
+        controls.minDistance = 2;
+        controls.maxDistance = 10;
+        controls.target.set(0, 0, -0.2);
+        controls.update();
+        window.addEventListener("resize", onWindowResize);
+      }
+      function onWindowResize() {
+        //  摄像机视锥体长宽比
+        camera.aspect = window.innerWidth / window.innerHeight;
+        //在大多数属性发生改变之后，你将需要调用.updateProjectionMatrix来使得这些改变生效
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        render();
+      }
+      function render() {
+        renderer.render(scene, camera);
+        // requestAnimationFrame(render);
+      }
+    </script>
+  </body>
+</html>

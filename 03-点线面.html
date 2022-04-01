@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body></body>
+  <script src="build/three.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // 生成模型
+    const geometry = new THREE.TorusGeometry(2, 1, 16, 20);
+    // 点
+    const points = new THREE.Points(
+      geometry,
+      new THREE.PointsMaterial({ color: 0xff0000, size: 0.1 })
+    );
+    const mesh = new THREE.Mesh(
+      geometry,
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    const lines = new THREE.Line(
+      geometry,
+      new THREE.LineBasicMaterial({ color: 0x00ff00 })
+    );
+
+    scene.add(points);
+    scene.add(mesh);
+    scene.add(lines);
+
+    camera.position.z = 5;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</html>

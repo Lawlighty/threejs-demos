@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body></body>
+  <script src="build/three.js"></script>
+  <script type="module">
+    import * as THREE from "/build/three.module.js";
+    import { GLTFLoader } from "/jsm/loaders/GLTFLoader.js";
+    import { OrbitControls } from "./jsm/controls/OrbitControls.js";
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0xffffff);
+    document.body.appendChild(renderer.domElement);
+
+    const loader = new GLTFLoader();
+    loader.load(
+      "/tesla_model_s/scene.gltf",
+      function (gltf) {
+        console.log("模型加载gltf", gltf);
+        const light = new THREE.AmbientLight(0xffffff); // soft white light
+        const pointLight = new THREE.PointLight(0xffffff, 1, 100); // soft white light
+        scene.add(light);
+        pointLight.position.set(5, 5, 10);
+        scene.add(pointLight);
+        scene.add(gltf.scene);
+        // renderer.render(scene, camera);
+
+        let ambientLight = new THREE.AmbientLight(0xd5d5d5);
+        ambientLight.intensity = 1.2;
+        scene.add(ambientLight);
+        
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.update();
+
+        function animate() {
+          controls.update();
+          renderer.render(scene, camera);
+          requestAnimationFrame(animate);
+        }
+        animate();
+      },
+      function (xhr) {
+        console.log(`加载模型进度:${(xhr.loaded / xhr.total) * 100} % loaded`);
+      },
+      function (err) {
+        console.log("模型加载出错");
+      }
+    );
+
+    camera.position.z = 500;
+
+    // function animate() {
+    //   requestAnimationFrame(animate);
+    //   renderer.render(scene, camera);
+    // }
+    // animate();
+  </script>
+</html>

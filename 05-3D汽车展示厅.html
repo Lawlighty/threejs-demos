@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js 3D汽车展示厅</title>
+  </head>
+  <body></body>
+  <script src="build/three.js"></script>
+  <script type="module">
+    import * as THREE from "./build/three.module.js";
+    import { OrbitControls } from "./jsm/controls/OrbitControls.js";
+    import { GLTFLoader } from "/jsm/loaders/GLTFLoader.js";
+    let loadingWidth = 0;
+    let isLoading = true;
+    const scene = new THREE.Scene();
+    //相机的默认坐标
+    const defaultMap = {
+      x: 510,
+      y: 128,
+      z: 0,
+    };
+    const camera = new THREE.PerspectiveCamera(
+      60,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    const { x, y, z } = defaultMap;
+    camera.position.set(x, y, z);
+    const renderer = new THREE.WebGLRenderer();
+    // renderer.setClearColor(0xffffff, 1.0);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    //通过Promise处理一下loadfile函数
+    const loadFile = (url) => {
+      const loader = new GLTFLoader();
+      return new Promise((resolve, reject) => {
+        loader.load(
+          url,
+          (gltf) => {
+            console.log("gltf.scene", gltf.scene);
+            console.log("gltf.scene.children", gltf.scene.children);
+            gltf.scene.traverse(function (child) {
+              if (child.isMesh) {
+                child.material.emissive = child.material.color;
+                child.material.emissiveMap = child.material.map;
+              }
+            });
+
+            scene.add(gltf.scene);
+            resolve(gltf);
+          },
+          ({ loaded, total }) => {
+            let load = Math.abs((loaded / total) * 100);
+            // loadingWidth.value = load;
+            loadingWidth = load;
+            if (load >= 100) {
+              setTimeout(() => {
+                isLoading = false;
+              }, 1000);
+            }
+            console.log((loaded / total) * 100 + "% loaded");
+          },
+          (err) => {
+            reject(err);
+          }
+        );
+      });
+    };
+
+    // 设置灯光
+    const setLight = () => {
+      directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      directionalLight.position.set(-4, 8, 4);
+      dhelper = new THREE.DirectionalLightHelper(directionalLight, 5, 0xff0000);
+      hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.4);
+      hemisphereLight.position.set(0, 8, 0);
+      hHelper = new THREE.HemisphereLightHelper(hemisphereLight, 5);
+      scene.add(directionalLight);
+      scene.add(hemisphereLight);
+    };
+
+    // camera.position.z = 5;
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.update();
+
+    function animate() {
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    async function init() {
+      const gltf = await loadFile("/tesla_model_s/scene.gltf");
+
+      animate();
+    }
+    init();
+  </script>
+</html>
